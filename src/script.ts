@@ -1,4 +1,4 @@
-[const canvas = document.createElement('canvas') as HTMLCanvasElement;
+const canvas = document.createElement('canvas') as HTMLCanvasElement;
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -128,70 +128,3 @@ class NeuralNet {
 
   }
 }
-
-
-
-
-
-
-
-
-/*
-class MLP {
-  public weightsInputHidden: Float32Array;
-  public weightsHiddenOutput: Float32Array;
-  public biases: Float32Array;
-  public hiddenTotal: number;
-  
-  constructor(
-    private inputSize: number,
-    private hiddenWidth: number,
-    private hiddenHeight: number,
-    private outputSize: number
-  ) {
-    this.hiddenTotal = hiddenWidth * hiddenHeight;
-    this.weightsInputHidden = new Float32Array(inputSize * this.hiddenTotal);
-    this.weightsHiddenOutput = new Float32Array(this.hiddenTotal * outputSize);
-    this.biases = new Float32Array(this.hiddenTotal + outputSize);
-    this.initializeWeights();
-  }
-
-  private initializeWeights(): void {
-    const inputScale = Math.sqrt(2 / (this.inputSize + this.hiddenTotal));
-    const outputScale = Math.sqrt(2 / (this.hiddenTotal + this.outputSize));
-    
-    for (let i = 0; i < this.weightsInputHidden.length; i++) {
-      this.weightsInputHidden[i] = (Math.random() * 2 - 1) * inputScale;
-    }
-    for (let i = 0; i < this.weightsHiddenOutput.length; i++) {
-      this.weightsHiddenOutput[i] = (Math.random() * 2 - 1) * outputScale;
-    }
-    for (let i = 0; i < this.biases.length; i++) {
-      this.biases[i] = (Math.random() * 2 - 1) * 0.1;
-    }
-  }
-
-  getWeight([fromX, fromY]: [number, number], [toX, toY]: [number, number]): number {
-    if (fromX === 0 && toX >= 1 && toX <= this.hiddenWidth) {
-      const hiddenIndex = toY * this.hiddenWidth + (toX - 1);
-      return this.weightsInputHidden[fromY * this.hiddenTotal + hiddenIndex];
-    }
-    if (fromX >= 1 && fromX <= this.hiddenWidth && toX === this.hiddenWidth + 1) {
-      const hiddenIndex = fromY * this.hiddenWidth + (fromX - 1);
-      return this.weightsHiddenOutput[hiddenIndex * this.outputSize + toY];
-    }
-    throw new Error(`Invalid connection: [${fromX},${fromY}] → [${toX},${toY}]`);
-  }
-
-  getBias([x, y]: [number, number]): number {
-    if (x >= 1 && x <= this.hiddenWidth) {
-      return this.biases[y * this.hiddenWidth + (x - 1)];
-    }
-    if (x === this.hiddenWidth + 1) {
-      return this.biases[this.hiddenTotal + y];
-    }
-    throw new Error(`Invalid bias position: [${x},${y}]`);
-  }
-}
-
-*/
