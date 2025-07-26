@@ -120,11 +120,14 @@ class NeuralNet {
   public getBias(position: [number, number]): number {
     let neuron = this.getNeuron(position);
     if (neuron instanceof InputNeuron) { return 0 }
-    else { return neuron.bias }
+    return neuron.bias
   }
 
-  public getWeight(position1: [number, number], position2: [number, number]): void {
+  public getWeight(position1: [number, number], position2: [number, number]): number {
     if (position2[0] !== position1[0] + 1) { throw new Error(`invalid positions ${position1}, ${position2}`) }
-
+    let neuron1 = this.getNeuron(position1);
+    this.getNeuron(position2); // error checking
+    if (neuron1 instanceof OutputNeuron) { throw new Error(`invalid position ${position1} with neuron ${neuron1}`) }
+    return neuron1.weights[position2[1]]
   }
 }
