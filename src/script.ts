@@ -125,8 +125,8 @@ class NeuralNet {
   public evaluateNetwork(inputs: number[]): number[] {
     if (inputs.length !== this.inputLayer.length) { throw new Error(`invalid input length for ${inputs} and input neurons ${JSON.stringify(this.inputLayer)}`) }
     // TODO: Evaluate Network
-    
-    return []
+
+    return [] // HACK: shut up compiler
   }
 }
 
