@@ -1,20 +1,3 @@
-const canvas = document.createElement('canvas') as HTMLCanvasElement;
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-document.body.style.margin = '0';
-canvas.style.display = 'block';
-
-document.body.appendChild(canvas);
-
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-});
-
-
-const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-
 function sigmoid(x: number): number {
     return 1 / (1 + Math.exp(-x));
 }
@@ -105,16 +88,19 @@ class NeuralNet {
 
   public getNeuron(position: [number, number]): InputNeuron | Neuron | OutputNeuron {
     if (position[1] > this.hiddenLayers.length + 1 || position[1] < 0) { throw new Error(`invalid position ${position}`) }
+    
     if (position[0] == 0) {
-      if (position[1] < this.inputLayer.length) { return this.inputLayer[position[1]] }
-      else { throw new Error(`invalid position ${position}`) }
+      if (position[1] >= this.inputLayer.length) { throw new Error(`invalid position ${position}`) }
+      return this.inputLayer[position[1]]
     }
+
     if (position[0] == this.hiddenLayers.length + 1) {
-      if (position[1] < this.outputLayer.length) { return this.outputLayer[position[1]] }
-      else { throw new Error(`invalid position ${position}`) }
+      if (position[1] >= this.outputLayer.length) { throw new Error(`invalid position ${position}`) }
+      return this.outputLayer[position[1]]
     }
-    if (position[1] < this.hiddenLayers[position[0]].length) { return this.hiddenLayers[position[0] - 1][position[1]] }
-    else { throw new Error(`invalid position ${position}`) }
+
+    if (position[1] >= this.hiddenLayers[position[0]].length) { throw new Error(`invalid position ${position}`) }
+    return this.hiddenLayers[position[0] - 1][position[1]]
   }
 
   public getBias(position: [number, number]): number {
@@ -126,8 +112,36 @@ class NeuralNet {
   public getWeight(position1: [number, number], position2: [number, number]): number {
     if (position2[0] !== position1[0] + 1) { throw new Error(`invalid positions ${position1}, ${position2}`) }
     let neuron1 = this.getNeuron(position1);
-    this.getNeuron(position2); // error checking
+    try {
+      this.getNeuron(position2);
+    }
+    catch(error) {
+      throw new Error(`${error}`);
+    }
     if (neuron1 instanceof OutputNeuron) { throw new Error(`invalid position ${position1} with neuron ${neuron1}`) }
     return neuron1.weights[position2[1]]
   }
+
+  public evaluateNetwork(inputs: number[]): number[] {
+    if (inputs.length !== this.inputLayer.length) { throw new Error(`invalid input length for ${inputs} and input neurons ${JSON.stringify(this.inputLayer)}`) }
+    // TODO: Evaluate Network
+    
+    return []
+  }
 }
+
+const canvas = document.createElement('canvas') as HTMLCanvasElement;
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+document.body.style.margin = '0';
+canvas.style.display = 'block';
+
+document.body.appendChild(canvas);
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+
+const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
