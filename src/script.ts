@@ -1,250 +1,114 @@
-function sigmoid(x: number): number {
-    return 1 / (1 + Math.exp(-x));
+let learningRate = 0.01; 
+let pointCount = 1000;
+let canvasSize = 300;
+let circleSize = 5;
+
+function sigmoid(x: number) {
+  return 1 / (1 + Math.exp(-x));
 }
 
-function relu(x: number): number {
-    return Math.max(0, x);
+type ActivationFunction = typeof Math.sign | typeof sigmoid;
+
+class Perceptron {
+  public length: number;
+  public weights: number[];
+
+  constructor(public activationFunction: ActivationFunction, public lengthBigInt: bigint) {
+    this.length = Number(lengthBigInt);
+    this.weights = new Array(this.length).fill(0);
+
+    for (let i = 0; i < this.length; i++) {
+      this.weights[i] = Math.random() * 2 - 1;
+    }
+  }
+
+  public train(inputs: number[], target: number) {
+    let guess = this.output(inputs);
+    let error = target - guess;
+
+    for (let i = 0; i < this.length; i++) {
+      this.weights[i] += error * inputs[i] * learningRate;
+    }
+  }
+
+  public output(inputs: number[]): number {
+    if (inputs.length !== this.weights.length) { throw new Error(`on line 13 ${inputs.length} and ${this.weights.length} not equal`) }
+
+    let sum = 0;
+
+    for (let i = 0; i < inputs.length; i++) {
+      sum += inputs[i] * this.weights[i];
+    }
+
+    return this.activationFunction(sum);
+  }
+
+  // \sum_{i=0}^{n} h(x_{n}*w_{n})
+  // h(x) is activation function
+  // n is the length of neurons of the previous layer
+  // x_{n} is the value stored in the neuron n of the previous layer
+  // w_{n} is the weight going from neuron in the the previous layer to the current neuron
 }
 
-function tanh(x: number): number {
-    return Math.tanh(x);
+class Point {
+  constructor(public x: number, public y: number) {}
 }
 
-type ActivationFunction = typeof tanh | typeof relu | typeof sigmoid;
-
-class InputNeuron {
-  constructor(public weights: Float32Array) {
-    weights;
-  }
+class Data {
+  constructor(public value: -1 | 1, public point: Point) {}
 }
 
-class Neuron {
-  constructor(public bias: number, public weights: Float32Array) {
-    bias;
-    weights;
+function getAccuracy(dataset: Data[], perceptron: Perceptron) {
+  let correct = 0;
+  for (let data of dataset) {
+    if (data.value === perceptron.output([data.point.x, data.point.y])) { correct++ }
   }
+
+  return correct / dataset.length;
 }
 
-class OutputNeuron {
-  constructor(public bias: number) {
-    bias;
-  }
+let dataset: Data[] = [];
+let value: -1 | 1;
+
+// Generate dataset at runtime
+for (let i = 0; i < pointCount; i++) {
+  let point = new Point(Math.random(), Math.random()); // normalized (0, 1]
+  value = point.y > point.x ? -1 : 1;
+  dataset.push(new Data(value, point));
 }
 
-class NeuralNet {
-  constructor(public activationFunction: ActivationFunction, public inputLayer: InputNeuron[], public hiddenLayers: Neuron[][], public outputLayer: OutputNeuron[]) {
-    activationFunction;
-    inputLayer;
-    hiddenLayers;
-    outputLayer;
 
-    if (hiddenLayers.length == 0) {
-      console.log(JSON.stringify(hiddenLayers));
-      throw new Error(`invalid hiddenLayers length ${hiddenLayers.length}`);
-    }
+let span = document.getElementById('span');
+if (!span) { throw new Error('span invalid') }
 
-    this.initialize();
-  }
+let span2 = document.getElementById('span2');
+if (!span2) { throw new Error('span2 invalid') }
 
-  private initialize(): void {
-    this.initializeInputLayer(this.inputLayer, this.hiddenLayers[0].length);
-  
-    for (let i = 0; i < this.hiddenLayers.length; i++) {
-      const nextLayer = this.hiddenLayers[i + 1] || this.outputLayer;
-      this.initializeLayer(this.hiddenLayers[i], nextLayer.length)
-    }
+let canvas = document.getElementById('canvas') as HTMLCanvasElement;
+canvas.width = canvasSize;
+canvas.height = canvasSize;
+canvas.style.border = '1px solid black';
 
-    this.outputLayer.forEach(neuron => {
-      neuron.bias = 0;
-    });
-  }
+let ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+ctx.fillStyle = `rgba(0, 0, 0, ${3000 / pointCount})`;
+ctx.strokeStyle = 'black';
+ctx.lineWidth = 100 / pointCount;
 
-  private initializeInputLayer(layer: InputNeuron[], nextLayerSize: number): void {
-    const scale = this.getXavierScale(layer.length, nextLayerSize);
+let testPerceptron = new Perceptron(Math.sign, 2n);
 
-    layer.forEach(neuron => {
-      neuron.weights = new Float32Array(nextLayerSize);
-      for (let i = 0; i < nextLayerSize; i++) {
-        neuron.weights[i] = (Math.random() * 2 - 1) * scale;
-      }
-    });
-  }
+let accuracies = [];
 
-  private initializeLayer(layer: Neuron[], nextLayerSize: number): void {
-    const scale = this.getXavierScale(layer.length, nextLayerSize);
+let inputs: [number, number];
+for (let i = 0; i < dataset.length; i++) {
+  inputs = [dataset[i].point.x, dataset[i].point.y];
+  testPerceptron.train(inputs, dataset[i].value);
 
-    layer.forEach(neuron => {
-      neuron.weights = new Float32Array(nextLayerSize);
-      for (let i = 0; i < nextLayerSize; i++) {
-        neuron.weights[i] = (Math.random() * 2 - 1) * scale; 
-      }
-      neuron.bias = 0;
-    });
-  }
+  ctx.beginPath();
+  ctx.arc(inputs[0] * canvasSize, inputs[1] * canvasSize, circleSize, 0, Math.PI * 2);
 
-  private getXavierScale(fanIn: number, fanOut: number): number {
-    return this.activationFunction == relu ? Math.sqrt(2 / fanIn) : Math.sqrt(6 / (fanIn + fanOut));
-  }
+  dataset[i].value == 1 ? ctx.stroke() : ctx.fill();
 
-  public getNeuron(position: [number, number]): InputNeuron | Neuron | OutputNeuron {
-    if (position[1] > this.hiddenLayers.length + 1 || position[1] < 0) { throw new Error(`invalid position ${position}`) }
-    
-    if (position[0] == 0) {
-      if (position[1] >= this.inputLayer.length) { throw new Error(`invalid position ${position}`) }
-      return this.inputLayer[position[1]]
-    }
-
-    if (position[0] == this.hiddenLayers.length + 1) {
-      if (position[1] >= this.outputLayer.length) { throw new Error(`invalid position ${position}`) }
-      return this.outputLayer[position[1]]
-    }
-
-    if (position[1] >= this.hiddenLayers[position[0]].length) { throw new Error(`invalid position ${position}`) }
-    return this.hiddenLayers[position[0] - 1][position[1]]
-  }
-
-  public getBias(position: [number, number]): number {
-    let neuron = this.getNeuron(position);
-    if (neuron instanceof InputNeuron) { return 0 }
-    return neuron.bias
-  }
-
-  public getWeight(position1: [number, number], position2: [number, number]): number {
-    if (position2[0] !== position1[0] + 1) { throw new Error(`invalid positions ${position1}, ${position2}`) }
-    let neuron1 = this.getNeuron(position1);
-    try {
-      this.getNeuron(position2);
-    }
-    catch(error) {
-      throw new Error(`${error}`);
-    }
-    if (neuron1 instanceof OutputNeuron) { throw new Error(`invalid position ${position1} with neuron ${neuron1}`) }
-    return neuron1.weights[position2[1]]
-  }
-
-  public evaluateNetwork(inputs: number[]): number[] {
-    if (inputs.length !== this.inputLayer.length) { throw new Error(`invalid input length for ${inputs} and input neurons ${JSON.stringify(this.inputLayer)}`) }
-    // TODO: Evaluate Network
-
-    return [] // HACK: shut up compiler
-  }
+  accuracies.push(getAccuracy(dataset, testPerceptron));
 }
 
-/*
-class NeuralNet {
-  constructor(public activationFunction: ActivationFunction, public inputLayer: InputNeuron[], public hiddenLayers: Neuron[][], public outputLayer: OutputNeuron[]) {
-    activationFunction;
-    inputLayer;
-    hiddenLayers;
-    outputLayer;
-
-    if (hiddenLayers.length == 0) {
-      console.log(JSON.stringify(hiddenLayers));
-      throw new Error(`invalid hiddenLayers length ${hiddenLayers.length}`);
-    }
-
-    this.initialize();
-  }
-
-  private initialize(): void {
-    this.initializeInputLayer(this.inputLayer, this.hiddenLayers[0].length);
-  
-    for (let i = 0; i < this.hiddenLayers.length; i++) {
-      const nextLayer = this.hiddenLayers[i + 1] || this.outputLayer;
-      this.initializeLayer(this.hiddenLayers[i], nextLayer.length)
-    }
-
-    this.outputLayer.forEach(neuron => {
-      neuron.bias = 0;
-    });
-  }
-
-  private initializeInputLayer(layer: InputNeuron[], nextLayerSize: number): void {
-    const scale = this.getXavierScale(layer.length, nextLayerSize);
-
-    layer.forEach(neuron => {
-      neuron.weights = new Float32Array(nextLayerSize);
-      for (let i = 0; i < nextLayerSize; i++) {
-        neuron.weights[i] = (Math.random() * 2 - 1) * scale;
-      }
-    });
-  }
-
-  private initializeLayer(layer: Neuron[], nextLayerSize: number): void {
-    const scale = this.getXavierScale(layer.length, nextLayerSize);
-
-    layer.forEach(neuron => {
-      neuron.weights = new Float32Array(nextLayerSize);
-      for (let i = 0; i < nextLayerSize; i++) {
-        neuron.weights[i] = (Math.random() * 2 - 1) * scale; 
-      }
-      neuron.bias = 0;
-    });
-  }
-
-  private getXavierScale(fanIn: number, fanOut: number): number {
-    return this.activationFunction == relu ? Math.sqrt(2 / fanIn) : Math.sqrt(6 / (fanIn + fanOut));
-  }
-
-  public getNeuron(position: [number, number]): InputNeuron | Neuron | OutputNeuron {
-    if (position[1] > this.hiddenLayers.length + 1 || position[1] < 0) { throw new Error(`invalid position ${position}`) }
-    
-    if (position[0] == 0) {
-      if (position[1] >= this.inputLayer.length) { throw new Error(`invalid position ${position}`) }
-      return this.inputLayer[position[1]]
-    }
-
-    if (position[0] == this.hiddenLayers.length + 1) {
-      if (position[1] >= this.outputLayer.length) { throw new Error(`invalid position ${position}`) }
-      return this.outputLayer[position[1]]
-    }
-
-    if (position[1] >= this.hiddenLayers[position[0]].length) { throw new Error(`invalid position ${position}`) }
-    return this.hiddenLayers[position[0] - 1][position[1]]
-  }
-
-  public getBias(position: [number, number]): number {
-    let neuron = this.getNeuron(position);
-    if (neuron instanceof InputNeuron) { return 0 }
-    return neuron.bias
-  }
-
-  public getWeight(position1: [number, number], position2: [number, number]): number {
-    if (position2[0] !== position1[0] + 1) { throw new Error(`invalid positions ${position1}, ${position2}`) }
-    let neuron1 = this.getNeuron(position1);
-    try {
-      this.getNeuron(position2);
-    }
-    catch(error) {
-      throw new Error(`${error}`);
-    }
-    if (neuron1 instanceof OutputNeuron) { throw new Error(`invalid position ${position1} with neuron ${neuron1}`) }
-    return neuron1.weights[position2[1]]
-  }
-
-  public evaluateNetwork(inputs: number[]): number[] {
-    if (inputs.length !== this.inputLayer.length) { throw new Error(`invalid input length for ${inputs} and input neurons ${JSON.stringify(this.inputLayer)}`) }
-    // TODO: Evaluate Network
-
-    return [] // HACK: shut up compiler
-  }
-}
-*/
-
-const canvas = document.createElement('canvas') as HTMLCanvasElement;
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-document.body.style.margin = '0';
-canvas.style.display = 'block';
-
-document.body.appendChild(canvas);
-
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-});
-
-const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-
-console.log(Math.random())
+span.innerText = accuracies.reduce((previousString, currentValue) => { return `${previousString}\n ${currentValue}` }, '');
