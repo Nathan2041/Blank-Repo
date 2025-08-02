@@ -1,8 +1,11 @@
 let learningRate = 0.0005;
-let pointCount = 1000;
+let pointCount = 200;
 let canvasSize = 300;
 let circleSize = 5;
-let trainingIterations = 200;
+let trainingIterations = 801;
+
+let lineSlope = 2;
+let lineOffset = -0.5;
 
 function sigmoid(x: number) {
   return 1 / (1 + Math.exp(-x));
@@ -13,10 +16,12 @@ type ActivationFunction = typeof Math.sign | typeof sigmoid;
 class Perceptron {
   public length: number;
   public weights: number[];
+  public bias: number;
 
   constructor(public activationFunction: ActivationFunction, public lengthBigInt: bigint) {
     this.length = Number(lengthBigInt);
     this.weights = new Array(this.length).fill(0);
+    this.bias = 0;
 
     for (let i = 0; i < this.length; i++) {
       this.weights[i] = Math.random() * 2 - 1;
@@ -35,7 +40,7 @@ class Perceptron {
   public output(inputs: number[]): number {
     if (inputs.length !== this.weights.length) { throw new Error(`on line 13 ${inputs.length} and ${this.weights.length} not equal`) }
 
-    let sum = 0;
+    let sum = this.bias;
 
     for (let i = 0; i < inputs.length; i++) {
       sum += inputs[i] * this.weights[i];
@@ -74,7 +79,7 @@ let value: -1 | 1;
 // Generate dataset at runtime
 for (let i = 0; i < pointCount; i++) {
   let point = new Point(Math.random(), Math.random()); // normalized (0, 1]
-  value = point.y > point.x + 0.1 ? -1 : 1;
+  value = point.y > point.x * lineSlope + lineOffset ? -1 : 1;
   dataset.push(new Data(value, point));
 }
 
@@ -110,11 +115,11 @@ for (let i = 0; i < dataset.length; i++) {
 }
 
 for (let i = 0; i < trainingIterations; i++) {
-  for (let j = 0; j < dataset.length; j++) {
-    inputs = [dataset[j].point.x, dataset[j].point.y];
-    testPerceptron.train(inputs, dataset[j].value);
-  }
-  accuracies.push(getAccuracy(dataset, testPerceptron));
+  let pointIndex = i % dataset.length;
+  inputs = [dataset[pointIndex].point.x, dataset[pointIndex].point.y];
+  testPerceptron.train(inputs, dataset[pointIndex].value);
+
+  if (pointIndex = 0) { accuracies.push(getAccuracy(dataset, testPerceptron)) }
 }
 
 span.innerText = accuracies.reduce((previousString, currentValue) => { return `${previousString}\n ${currentValue}` }, '');
