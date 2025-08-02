@@ -1,7 +1,8 @@
-let learningRate = 0.01; 
+let learningRate = 0.0005;
 let pointCount = 1000;
 let canvasSize = 300;
 let circleSize = 5;
+let trainingIterations = 200;
 
 function sigmoid(x: number) {
   return 1 / (1 + Math.exp(-x));
@@ -73,7 +74,7 @@ let value: -1 | 1;
 // Generate dataset at runtime
 for (let i = 0; i < pointCount; i++) {
   let point = new Point(Math.random(), Math.random()); // normalized (0, 1]
-  value = point.y > point.x ? -1 : 1;
+  value = point.y > point.x + 0.1 ? -1 : 1;
   dataset.push(new Data(value, point));
 }
 
@@ -96,18 +97,23 @@ ctx.lineWidth = 100 / pointCount;
 
 let testPerceptron = new Perceptron(Math.sign, 2n);
 
-let accuracies = [];
+let accuracies: number[] = [getAccuracy(dataset, testPerceptron)];
 
 let inputs: [number, number];
+
 for (let i = 0; i < dataset.length; i++) {
   inputs = [dataset[i].point.x, dataset[i].point.y];
-  testPerceptron.train(inputs, dataset[i].value);
-
   ctx.beginPath();
   ctx.arc(inputs[0] * canvasSize, inputs[1] * canvasSize, circleSize, 0, Math.PI * 2);
 
   dataset[i].value == 1 ? ctx.stroke() : ctx.fill();
+}
 
+for (let i = 0; i < trainingIterations; i++) {
+  for (let j = 0; j < dataset.length; j++) {
+    inputs = [dataset[j].point.x, dataset[j].point.y];
+    testPerceptron.train(inputs, dataset[j].value);
+  }
   accuracies.push(getAccuracy(dataset, testPerceptron));
 }
 
