@@ -1,11 +1,19 @@
+// https://www.youtube.com/watch?v=XJ7HLz9VYz0&list=PLRqwX-V7Uu6aCibgK1PTWWu9by6XFdCfh&index=1&pp=iAQB
+// https://www.youtube.com/watch?v=ntKn5TPHHAk&list=PLRqwX-V7Uu6aCibgK1PTWWu9by6XFdCfh&index=2&pp=iAQB
+// https://www.youtube.com/watch?v=DGxIcDjPzac&list=PLRqwX-V7Uu6aCibgK1PTWWu9by6XFdCfh&index=3
+
+
+
 let learningRate = 0.0005;
-let pointCount = 200;
+let pointCount = 2000;
 let canvasSize = 300;
 let circleSize = 5;
-let trainingIterations = 801;
+let trainingIterations = 60000;
 
 let lineSlope = 2;
-let lineOffset = -0.5;
+let lineOffset = 0.6;
+
+import { getDataset, Point, Data } from "./database";
 
 function sigmoid(x: number) {
   return 1 / (1 + Math.exp(-x));
@@ -21,7 +29,7 @@ class Perceptron {
   constructor(public activationFunction: ActivationFunction, public lengthBigInt: bigint) {
     this.length = Number(lengthBigInt);
     this.weights = new Array(this.length).fill(0);
-    this.bias = 0;
+    this.bias = Math.random() * 2 - 1; // technically a weight for an input of always 1
 
     for (let i = 0; i < this.length; i++) {
       this.weights[i] = Math.random() * 2 - 1;
@@ -35,6 +43,8 @@ class Perceptron {
     for (let i = 0; i < this.length; i++) {
       this.weights[i] += error * inputs[i] * learningRate;
     }
+
+    this.bias += error * learningRate;
   }
 
   public output(inputs: number[]): number {
@@ -54,35 +64,17 @@ class Perceptron {
   // n is the length of neurons of the previous layer
   // x_{n} is the value stored in the neuron n of the previous layer
   // w_{n} is the weight going from neuron in the the previous layer to the current neuron
-}
 
-class Point {
-  constructor(public x: number, public y: number) {}
-}
+  public getAccuracy(dataset: Data[]): number {
+    let correct = 0;
 
-class Data {
-  constructor(public value: -1 | 1, public point: Point) {}
-}
+    for (let data of dataset) {
+      if (data.value === this.output([data.point.x, data.point.y])) { correct++ }
+    }
 
-function getAccuracy(dataset: Data[], perceptron: Perceptron) {
-  let correct = 0;
-  for (let data of dataset) {
-    if (data.value === perceptron.output([data.point.x, data.point.y])) { correct++ }
+    return correct / dataset.length;
   }
-
-  return correct / dataset.length;
 }
-
-let dataset: Data[] = [];
-let value: -1 | 1;
-
-// Generate dataset at runtime
-for (let i = 0; i < pointCount; i++) {
-  let point = new Point(Math.random(), Math.random()); // normalized (0, 1]
-  value = point.y > point.x * lineSlope + lineOffset ? -1 : 1;
-  dataset.push(new Data(value, point));
-}
-
 
 let span = document.getElementById('span');
 if (!span) { throw new Error('span invalid') }
@@ -100,9 +92,11 @@ ctx.fillStyle = `rgba(0, 0, 0, ${3000 / pointCount})`;
 ctx.strokeStyle = 'black';
 ctx.lineWidth = 100 / pointCount;
 
+let dataset = getDataset(pointCount, lineSlope, lineOffset);
+
 let testPerceptron = new Perceptron(Math.sign, 2n);
 
-let accuracies: number[] = [getAccuracy(dataset, testPerceptron)];
+let accuracies: number[] = [testPerceptron.getAccuracy(dataset)];
 
 let inputs: [number, number];
 
@@ -119,7 +113,7 @@ for (let i = 0; i < trainingIterations; i++) {
   inputs = [dataset[pointIndex].point.x, dataset[pointIndex].point.y];
   testPerceptron.train(inputs, dataset[pointIndex].value);
 
-  if (pointIndex = 0) { accuracies.push(getAccuracy(dataset, testPerceptron)) }
+  if (pointIndex == 0) { accuracies.push(testPerceptron.getAccuracy(dataset)) }
 }
 
 span.innerText = accuracies.reduce((previousString, currentValue) => { return `${previousString}\n ${currentValue}` }, '');
