@@ -1,7 +1,7 @@
-// https://www.youtube.com/watch?v=XJ7HLz9VYz0&list=PLRqwX-V7Uu6aCibgK1PTWWu9by6XFdCfh&index=1&pp=iAQB
-// https://www.youtube.com/watch?v=ntKn5TPHHAk&list=PLRqwX-V7Uu6aCibgK1PTWWu9by6XFdCfh&index=2&pp=iAQB
+// https://www.youtube.com/watch?v=XJ7HLz9VYz0&list=PLRqwX-V7Uu6aCibgK1PTWWu9by6XFdCfh&index=1
+// https://www.youtube.com/watch?v=ntKn5TPHHAk&list=PLRqwX-V7Uu6aCibgK1PTWWu9by6XFdCfh&index=2
 // https://www.youtube.com/watch?v=DGxIcDjPzac&list=PLRqwX-V7Uu6aCibgK1PTWWu9by6XFdCfh&index=3
-
+// https://www.youtube.com/watch?v=u5GAVdLQyIg&list=PLRqwX-V7Uu6aCibgK1PTWWu9by6XFdCfh&index=4
 
 
 let learningRate = 0.0005;
